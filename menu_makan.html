@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Menu Restoran - QR Tersedia</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      text-align: center;
+    }
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .menu-item label {
+      flex: 1;
+    }
+    .quantity {
+      width: 60px;
+      text-align: center;
+    }
+    button {
+      display: block;
+      margin: 15px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #hitungBtn {
+      background-color: #4CAF50;
+      color: white;
+    }
+    #hitungBtn:hover {
+      background-color: #45a049;
+    }
+    #qrBtn {
+      background-color: #2196F3;
+      color: white;
+    }
+    #qrBtn:hover {
+      background-color: #0b7dda;
+    }
+    #struk {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #f0f0f0;
+      border-radius: 8px;
+      display: none;
+    }
+    .struk-item {
+      display: flex;
+      justify-content: space-between;
+    }
+    .total {
+      font-weight: bold;
+      margin-top: 10px;
+      font-size: 1.2em;
+    }
+    #qrcode {
+      text-align: center;
+      margin-top: 20px;
+      display: none;
+    }
+    #qrcode p {
+      margin-top: 10px;
+      font-size: 14px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🍽️ Menu Restoran Enak</h1>
+
+    <button id="qrBtn" onclick="tampilkanQR()">Tampilkan QR Code Menu</button>
+
+    <h2>Pilih Menu Anda</h2>
+    <div id="menu"></div>
+
+    <button id="hitungBtn" onclick="hitungTotal()">Hitung Total & Tampilkan Struk</button>
+
+    <div id="struk"></div>
+
+    <div id="qrcode">
+      <h3>Scan untuk Buka Menu</h3>
+      <div id="qrcode-canvas"></div>
+      <p>Scan dengan kamera HP Anda!</p>
+    </div>
+  </div>
+
+  <!-- Load QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    // Data menu
+    const menu = [
+      { nama: "Nasi Goreng", harga: 25000 },
+      { nama: "Mie Ayam", harga: 20000 },
+      { nama: "Soto Ayam", harga: 18000 },
+      { nama: "Ayam Bakar", harga: 30000 },
+      { nama: "Es Teh", harga: 5000 },
+      { nama: "Jus Jeruk", harga: 10000 },
+      { nama: "Kopi Hitam", harga: 7000 }
+    ];
+
+    // Render menu
+    const menuContainer = document.getElementById('menu');
+    menu.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'menu-item';
+      div.innerHTML = `
+        <label>
+          <input type="checkbox" id="item-${index}" onchange="updateQty(${index})">
+          ${item.nama} - Rp ${item.harga.toLocaleString('id-ID')}
+        </label>
+        <input type="number" class="quantity" id="qty-${index}" min="1" value="1" onchange="updateTotal()" disabled>
+      `;
+      menuContainer.appendChild(div);
+    });
+
+    function updateQty(index) {
+      const checkbox = document.getElementById(`item-${index}`);
+      const qtyInput = document.getElementById(`qty-${index}`);
+      qtyInput.disabled = !checkbox.checked;
+      updateTotal(); // opsional: update langsung
+    }
+
+    function hitungTotal() {
+      let total = 0;
+      let strukHTML = '<h2>📝 Struk Pembayaran</h2>';
+
+      menu.forEach((item, index) => {
+        const checkbox = document.getElementById(`item-${index}`);
+        const qtyInput = document.getElementById(`qty-${index}`);
+        if (checkbox.checked) {
+          const qty = parseInt(qtyInput.value) || 1;
+          const subtotal = item.harga * qty;
+          total += subtotal;
+          strukHTML += `
+            <div class="struk-item">
+              <span>${item.nama} x${qty}</span>
+              <span>Rp ${subtotal.toLocaleString('id-ID')}</span>
+            </div>
+          `;
+        }
+      });
+
+      if (total === 0) {
+        alert('Silakan pilih minimal satu menu!');
+        return;
+      }
+
+      strukHTML += `<div class="total">Total: Rp ${total.toLocaleString('id-ID')}</div>`;
+      document.getElementById('struk').innerHTML = strukHTML;
+      document.getElementById('struk').style.display = 'block';
+    }
+
+    // Fungsi tampilkan QR Code
+    function tampilkanQR() {
+      // Ambil URL halaman saat ini
+      const url = window.location.href;
+
+      // Bersihkan QR lama
+      document.getElementById('qrcode-canvas').innerHTML = '';
+
+      // Buat QR Code
+      new QRCode(document.getElementById("qrcode-canvas"), {
+        text: url,
+        width: 180,
+        height: 180,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.getElementById('qrcode').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
